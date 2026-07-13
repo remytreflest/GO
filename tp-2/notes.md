@@ -173,3 +173,8 @@ func (h *NotesHandler) Create(w http.ResponseWriter, r *http.Request) { ... }
 ```
 
 La spec (`docs/swagger.yaml`) est générée à partir de commentaires structurés au-dessus des handlers via `swag init` (voir `commands.md`), et non écrite à la main : elle ne peut pas diverger silencieusement du code tant qu'on pense à relancer la génération après une modification de route.
+
+Aucun plugin d'éditeur n'est impliqué : deux briques distinctes de l'écosystème `swaggo`, aucune installée globalement.
+
+- **`swag` (outil CLI, générateur)** — invoqué via `go run github.com/swaggo/swag/cmd/swag@latest init ...` (`commands.md`). `go run module@latest` télécharge et exécute l'outil à la volée depuis le cache des modules Go, sans installation globale ni ajout au `PATH`. Il lit les commentaires `// @Summary`, `// @Param`, etc. au-dessus des handlers (`internal/http/handlers/notes.go`) et de `cmd/api/main.go`, puis génère `docs/swagger.json`, `docs/swagger.yaml` et `docs/docs.go`.
+- **`swaggo/http-swagger` (bibliothèque, dépendance de runtime)** — déclarée dans `go.mod` (`github.com/swaggo/http-swagger/v2`) car importée directement dans le code : `main.go` l'importe sous l'alias `httpSwagger` et monte `mux.Handle("/swagger/", httpSwagger.WrapHandler)`. C'est elle qui sert l'UI Swagger à l'exécution, en lisant `docs.go` généré par `swag init`.
