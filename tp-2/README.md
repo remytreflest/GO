@@ -18,6 +18,7 @@ tp-2/
 │       ├── handlers/       # handlers HTTP, enveloppe JSON, routeur
 │       └── middleware/     # request ID, logging (slog), recovery, timeout
 ├── docs/                    # spec OpenAPI (Swagger 2.0) générée par swag — voir commands.md
+├── cover                    # rapport de couverture de tests (go tool cover)
 ├── notes.md
 └── commands.md
 ```

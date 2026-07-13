@@ -37,8 +37,8 @@ go test ./tp-2/... -cover
 Rapport détaillé par fonction :
 
 ```bash
-go test ./tp-2/... -coverprofile=cover.out
-go tool cover -func=cover.out
+go test ./tp-2/... -coverprofile=tp-2/cover.out
+go tool cover -func=tp-2/cover.out
 ```
 
 ## Vérifications statiques
