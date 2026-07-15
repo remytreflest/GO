@@ -8,7 +8,8 @@ Application de prise de notes en ligne de commande, écrite en Go. Le dépôt su
 mira/
 ├── go-warmup/   # 5 exercices Go indépendants (bases du langage)
 ├── tp-1/        # Mira CLI locale (stockage JSONL sur disque)
-└── tp-2/        # Mira API HTTP (stockage en mémoire, spec OpenAPI)
+├── tp-2/        # Mira API HTTP (stockage en mémoire, spec OpenAPI)
+└── tp-3/        # Concurrence et goroutines (exercices indépendants)
 ```
 
 ### `go-warmup/`
@@ -35,4 +36,13 @@ Deuxième version de Mira : une API HTTP (`/api/v1/notes`) construite sur `net/h
 
 ```bash
 go run ./tp-2/cmd/api
+```
+
+### `tp-3/`
+
+Exercices sur la concurrence en Go : goroutines, `sync.WaitGroup`, channels, worker pool, `select`/`time.After`, race condition (observée puis corrigée avec `sync.Mutex`), et un bonus sur `context.WithTimeout`. Chaque exercice est un `package main` indépendant (pas de `go.mod` séparé). Voir [tp-3/notes.md](tp-3/notes.md) et [tp-3/commands.md](tp-3/commands.md).
+
+```bash
+go build ./tp-3/...
+go run ./tp-3/exo1
 ```
