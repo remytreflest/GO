@@ -52,8 +52,9 @@ go run ./tp-3/exo1
 
 Troisième évolution de Mira, sous forme d'un dossier séparé (`tp-1/`/`tp-2/` restent figés) : `tp-4/api` remplace le stockage en mémoire de tp-2 par **PostgreSQL** (pgx, migrations via golang-migrate, transaction sur création de note + tags), ajoute un **enrichissement automatique** asynchrone (tags/résumé/score/embedding simulés localement, calculés par un pool de workers borné avec timeout `context`, statut `enrichment_status` pending/done/failed) et une **recherche hybride** full-text + similarité vectorielle (pgvector, index GIN + HNSW). `tp-4/cli` fait évoluer tp-1 pour parler à cette API en HTTP au lieu du fichier JSONL local — condition nécessaire pour que toute note créée/modifiée déclenche l'enrichissement. Voir [tp-4/notes.md](tp-4/notes.md) et [tp-4/commands.md](tp-4/commands.md).
 
+gitbash
 ```bash
 docker compose -f tp-4/docker-compose.yml up -d
 DATABASE_URL="postgres://mira:mira@localhost:5433/mira?sslmode=disable" go run ./tp-4/api/cmd/api
-go run ./tp-4/cli add "Go generics" "type parameters, constraints, generic functions"
+go run ./tp-4/cli
 ```
