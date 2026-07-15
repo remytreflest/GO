@@ -1,0 +1,23 @@
+services:
+  db:
+    # pgvector/pgvector, not the stock postgres image: pgvector's extension
+    # isn't bundled with vanilla postgres.
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: mira
+      POSTGRES_PASSWORD: mira
+      POSTGRES_DB: mira
+    ports:
+      # Host port 5433 (not 5432): avoids clashing with any other local
+      # Postgres instance/container already using the default port.
+      - "5433:5432"
+    volumes:
+      - mira_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mira -d mira"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mira_pgdata:
