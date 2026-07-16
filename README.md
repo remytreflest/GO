@@ -109,6 +109,6 @@ Le dossier [`Videos/`](Videos/) contient 3 enregistrements montrant le système 
 
 | Vidéo | Contenu |
 | --- | --- |
-| [`RECORD API SWAGGER.mkv`](<Videos/RECORD API SWAGGER.mkv>) | `tp-4/api` démarrée, exploration et appel des routes `/api/v1/notes` et `/api/v1/search` via l'UI Swagger générée. |
+| [`RECORD API SWAGGER.mkv`](<Videos/RECORD API SWAGGER.mkv>) | `tp-4/api` démarrée, exploration et appel des routes via l'UI Swagger générée. |
 | [`RECORD CLI.mkv`](<Videos/RECORD CLI.mkv>) | Utilisation de `tp-4/cli` en ligne de commande, sans agent IA, contre l'API en marche. |
 | [`RECORD MCP CLAUDE.mkv`](<Videos/RECORD MCP CLAUDE.mkv>) | Le serveur MCP `tp-5` piloté par un agent IA dans Claude Code : appel des tools `add_note` / `search_notes` / `get_note` / `list_recent_notes` traduits en requêtes HTTP vers `tp-4/api`. |
