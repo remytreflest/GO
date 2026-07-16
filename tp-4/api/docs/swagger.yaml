@@ -1,0 +1,324 @@
+basePath: /
+definitions:
+  internal_http_handlers.envelope:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/internal_http_handlers.errorBody'
+      request_id:
+        type: string
+    type: object
+  internal_http_handlers.errorBody:
+    properties:
+      code:
+        type: string
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      message:
+        type: string
+    type: object
+  internal_http_handlers.listResponse:
+    properties:
+      limit:
+        type: integer
+      notes:
+        items:
+          $ref: '#/definitions/mira_tp-4_api_internal_core.Note'
+        type: array
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  internal_http_handlers.searchResponse:
+    properties:
+      notes:
+        items:
+          $ref: '#/definitions/mira_tp-4_api_internal_core.Note'
+        type: array
+      query:
+        type: string
+      total:
+        type: integer
+    type: object
+  mira_tp-4_api_internal_core.CreateNoteInput:
+    properties:
+      content:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+    type: object
+  mira_tp-4_api_internal_core.EnrichmentStatus:
+    enum:
+    - pending
+    - done
+    - failed
+    type: string
+    x-enum-varnames:
+    - EnrichmentPending
+    - EnrichmentDone
+    - EnrichmentFailed
+  mira_tp-4_api_internal_core.Note:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      enrichment_status:
+        $ref: '#/definitions/mira_tp-4_api_internal_core.EnrichmentStatus'
+      id:
+        type: string
+      score:
+        type: number
+      summary:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  mira_tp-4_api_internal_core.UpdateNoteInput:
+    properties:
+      content:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API v1 pour la gestion de notes du projet fil rouge Mira, avec stockage
+    PostgreSQL, enrichissement asynchrone (tags/résumé/score/embedding simulés) et
+    recherche hybride full-text + vectorielle.
+  title: Mira Notes API
+  version: "2.0"
+paths:
+  /api/v1/notes:
+    get:
+      parameters:
+      - description: Nombre maximum de résultats (défaut 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Décalage de pagination (défaut 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_http_handlers.listResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                error:
+                  $ref: '#/definitions/internal_http_handlers.errorBody'
+              type: object
+      summary: Lister les notes
+      tags:
+      - notes
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Note à créer
+        in: body
+        name: note
+        required: true
+        schema:
+          $ref: '#/definitions/mira_tp-4_api_internal_core.CreateNoteInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/mira_tp-4_api_internal_core.Note'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                error:
+                  $ref: '#/definitions/internal_http_handlers.errorBody'
+              type: object
+      summary: Créer une note
+      tags:
+      - notes
+  /api/v1/notes/{id}:
+    delete:
+      parameters:
+      - description: ID de la note
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                error:
+                  $ref: '#/definitions/internal_http_handlers.errorBody'
+              type: object
+      summary: Supprimer une note
+      tags:
+      - notes
+    get:
+      parameters:
+      - description: ID de la note
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/mira_tp-4_api_internal_core.Note'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                error:
+                  $ref: '#/definitions/internal_http_handlers.errorBody'
+              type: object
+      summary: Récupérer une note
+      tags:
+      - notes
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID de la note
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Champs à modifier (au moins un requis)
+        in: body
+        name: patch
+        required: true
+        schema:
+          $ref: '#/definitions/mira_tp-4_api_internal_core.UpdateNoteInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/mira_tp-4_api_internal_core.Note'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                error:
+                  $ref: '#/definitions/internal_http_handlers.errorBody'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                error:
+                  $ref: '#/definitions/internal_http_handlers.errorBody'
+              type: object
+      summary: Mettre à jour partiellement une note
+      tags:
+      - notes
+  /api/v1/search:
+    get:
+      parameters:
+      - description: Terme recherché
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_http_handlers.searchResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_http_handlers.envelope'
+            - properties:
+                error:
+                  $ref: '#/definitions/internal_http_handlers.errorBody'
+              type: object
+      summary: 'Rechercher des notes (hybride : full-text + similarité vectorielle)'
+      tags:
+      - search
+swagger: "2.0"
