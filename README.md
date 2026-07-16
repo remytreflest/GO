@@ -1,75 +1,104 @@
 # Mira
 
-Application de prise de notes en ligne de commande, écrite en Go. Le dépôt suit une progression pédagogique : exercices d'échauffement, puis les TP qui construisent le projet fil rouge Mira.
+Application de prise de notes en ligne de commande, écrite en Go. Le dépôt suit une progression
+pédagogique : des exercices d'échauffement, puis le projet fil rouge Mira construit par les TP.
+**Le projet actif est `tp-4` (API) + `tp-5` (serveur MCP)**, qui forment un seul système — le reste
+(`go-warmup`, `tp-1`, `tp-2`, `tp-3`) ce sont des exercices d'apprentissage indépendants, figés.
 
 ## Structure
 
 ```
 mira/
-├── go-warmup/   # 5 exercices Go indépendants (bases du langage)
-├── tp-1/        # Mira CLI locale (stockage JSONL sur disque)
-├── tp-2/        # Mira API HTTP (stockage en mémoire, spec OpenAPI)
-├── tp-3/        # Concurrence et goroutines (exercices indépendants)
-├── tp-4/        # Mira v2 : PostgreSQL, enrichissement asynchrone, recherche hybride
-└── tp-5/        # Serveur MCP : expose mira à un agent IA (Claude Code, Claude Desktop...)
+├── go-warmup/   # exercice : bases du langage Go
+├── tp-1/        # exercice : Mira CLI locale (JSONL)
+├── tp-2/        # exercice : Mira API HTTP en mémoire
+├── tp-3/        # exercice : concurrence (goroutines, channels, worker pool)
+├── tp-4/        # Mira API : PostgreSQL, enrichissement asynchrone, recherche hybride
+└── tp-5/        # Serveur MCP : expose l'API tp-4 à un agent IA (Claude Code, Claude Desktop...)
 ```
 
-### `go-warmup/`
+`go-warmup/`, `tp-1/`, `tp-2/` et `tp-3/` sont des exercices d'apprentissage, non maintenus au-delà
+de leur propre TP — chacun a son `notes.md` (notions apprises) et `commands.md` (commandes
+d'exécution) si besoin d'y revenir.
 
-Cinq mini-exercices indépendants pour prendre en main le langage, chacun dans son propre dossier (`ex1` à `ex5`) :
+## `tp-4` + `tp-5` — le projet Mira
 
-| Exercice | Sujet |
-|---|---|
-| `ex1` | Variables, types, zero values, `os.Args`, boucles |
-| `ex2` | Slices, maps, tri (`sort.Slice`) |
-| `ex3` | Structs, méthodes, receivers, `defer` |
-| `ex4` | Interfaces implicites, erreurs typées, `sync.Mutex` |
-| `ex5` | Tests unitaires, table-driven tests |
+`tp-4` et `tp-5` sont liés : **`tp-5` ne fonctionne pas sans `tp-4`**.
 
-Chaque exercice contient `notes.md` (notions clés apprises) et `commands.md` (commandes pour l'exécuter/tester).
+- **`tp-4/api`** est le serveur qui fait le travail réel : stockage PostgreSQL (pgx, migrations
+  golang-migrate appliquées automatiquement au démarrage), enrichissement automatique et asynchrone
+  (tags/résumé/score/embedding simulés localement, pool de workers borné avec timeout `context`,
+  statut `enrichment_status` `pending`/`done`/`failed`), recherche hybride full-text + similarité
+  vectorielle (pgvector). Il expose `/api/v1/notes` et `/api/v1/search` en HTTP.
+  `tp-4/cli` est un client en ligne de commande pour cette même API.
+- **`tp-5/cmd/mira-mcp`** est un serveur [MCP](https://modelcontextprotocol.io/) (transport stdio,
+  `modelcontextprotocol/go-sdk`) qui traduit les appels d'un agent IA (Claude Code, Claude Desktop)
+  en requêtes HTTP vers `tp-4/api` : 4 tools — `search_notes`, `get_note`, `add_note`,
+  `list_recent_notes`. Comme `tp-4/cli`, il ne parle **jamais** à la base de données directement,
+  uniquement à l'API HTTP — c'est ce qui garantit que toute note créée par l'agent déclenche
+  l'enrichissement automatique.
 
-### `tp-1/`
+Concrètement, `tp-5` est un adaptateur sans valeur seul : si `tp-4/api` n'est pas démarrée, ses
+tools répondent avec une erreur claire ("mira API unreachable"), jamais un crash.
 
-Première version de Mira : une CLI qui persiste les notes dans un fichier JSON Lines (`~/.mira/notes.jsonl`), avec recherche et pattern repository (`notes.Store` / `JSONLStore`). Voir `tp-1/notes.md` et `tp-1/commands.md`.
+### Lancer le projet depuis un clone du dépôt
 
-### `tp-2/`
+Prérequis : Go 1.26+, Docker Desktop (pour PostgreSQL/pgvector), Claude Code (pour le serveur MCP).
 
-Deuxième version de Mira : une API HTTP (`/api/v1/notes`) construite sur `net/http` (Go 1.22+, routage par méthode + pattern), avec stockage en mémoire thread-safe, validation, middlewares (request ID, logging structuré, recovery, timeout) et spec OpenAPI générée via `swaggo/swag`. Voir [tp-2/README.md](tp-2/README.md) pour le détail des routes et des exemples `curl`.
+**1. Cloner et récupérer les dépendances**
 
 ```bash
-go run ./tp-2/cmd/api
+git clone https://github.com/remytreflest/GO mira
+cd mira
+go mod download
 ```
 
-### `tp-3/`
+**2. Démarrer PostgreSQL (pgvector)**
 
-Exercices sur la concurrence en Go : goroutines, `sync.WaitGroup`, channels, worker pool, `select`/`time.After`, race condition (observée puis corrigée avec `sync.Mutex`), et un bonus sur `context.WithTimeout`. Chaque exercice est un `package main` indépendant (pas de `go.mod` séparé). Voir [tp-3/notes.md](tp-3/notes.md) et [tp-3/commands.md](tp-3/commands.md).
-
-```bash
-go build ./tp-3/...
-go run ./tp-3/exo1
-```
-
-### `tp-4/`
-
-Troisième évolution de Mira, sous forme d'un dossier séparé (`tp-1/`/`tp-2/` restent figés) : `tp-4/api` remplace le stockage en mémoire de tp-2 par **PostgreSQL** (pgx, migrations via golang-migrate, transaction sur création de note + tags), ajoute un **enrichissement automatique** asynchrone (tags/résumé/score/embedding simulés localement, calculés par un pool de workers borné avec timeout `context`, statut `enrichment_status` pending/done/failed) et une **recherche hybride** full-text + similarité vectorielle (pgvector, index GIN + HNSW). `tp-4/cli` fait évoluer tp-1 pour parler à cette API en HTTP au lieu du fichier JSONL local — condition nécessaire pour que toute note créée/modifiée déclenche l'enrichissement. Voir [tp-4/notes.md](tp-4/notes.md) et [tp-4/commands.md](tp-4/commands.md).
-
-gitbash
 ```bash
 docker compose -f tp-4/docker-compose.yml up -d
+```
+
+**3. Démarrer l'API `tp-4`** — les migrations s'appliquent automatiquement au démarrage ; laisser ce
+terminal ouvert, c'est un serveur qui doit rester en vie :
+
+```bash
 DATABASE_URL="postgres://mira:mira@localhost:5433/mira?sslmode=disable" go run ./tp-4/api/cmd/api
+```
+
+Vérifier qu'elle répond :
+
+```bash
+curl http://localhost:8080/api/v1/notes?limit=1
+```
+
+**4. (Optionnel) Utiliser le CLI directement, sans agent IA**
+
+```bash
 go run ./tp-4/cli
 ```
 
-### `tp-5/`
-
-Serveur [MCP](https://modelcontextprotocol.io/) (`modelcontextprotocol/go-sdk`, transport stdio) qui
-expose les notes de `tp-4/api` à un agent IA (Claude Code, Claude Desktop) : 4 tools —
-`search_notes`, `get_note`, `add_note`, `list_recent_notes`. Comme `tp-4/cli`, il ne parle qu'à
-l'API HTTP, jamais à la base directement, pour garantir que toute note créée par l'agent déclenche
-l'enrichissement automatique. Voir [tp-5/README.md](tp-5/README.md) pour l'installation et
-l'enregistrement dans Claude Code/Desktop, [tp-5/notes.md](tp-5/notes.md) et
-[tp-5/commands.md](tp-5/commands.md) pour le détail.
+**5. Enregistrer le serveur MCP `tp-5` dans Claude Code**
 
 ```bash
-go run ./tp-5/cmd/mira-mcp
+cp tp-5/.mcp.json.example .mcp.json
 ```
+
+Redémarrer Claude Code (ou `/mcp` pour recharger les serveurs du projet). Contrairement à
+`tp-4/api`, **`tp-5/cmd/mira-mcp` ne se lance jamais manuellement** : c'est Claude Code qui démarre
+le binaire lui-même en sous-processus (transport stdio) dès qu'il en a besoin.
+
+**6. Vérifier que tout fonctionne**
+
+Demander à l'agent, par exemple : *"Ajoute une note résumant ce qu'on vient de faire"* — l'appel à
+`add_note` doit apparaître dans les outils utilisés, et la note doit apparaître enrichie côté API
+quelques centaines de ms plus tard :
+
+```bash
+curl http://localhost:8080/api/v1/notes/<id>
+# enrichment_status: "done"
+```
+
+Voir [tp-4/notes.md](tp-4/notes.md) / [tp-4/commands.md](tp-4/commands.md) et
+[tp-5/README.md](tp-5/README.md) / [tp-5/notes.md](tp-5/notes.md) /
+[tp-5/commands.md](tp-5/commands.md) pour le détail de chaque partie.
