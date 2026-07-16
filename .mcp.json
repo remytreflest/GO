@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "mira": {
+      "command": "go",
+      "args": ["run", "./tp-5/cmd/mira-mcp"],
+      "env": {
+        "MIRA_API_URL": "http://localhost:8080"
+      }
+    }
+  }
+}

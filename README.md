@@ -10,7 +10,8 @@ mira/
 ├── tp-1/        # Mira CLI locale (stockage JSONL sur disque)
 ├── tp-2/        # Mira API HTTP (stockage en mémoire, spec OpenAPI)
 ├── tp-3/        # Concurrence et goroutines (exercices indépendants)
-└── tp-4/        # Mira v2 : PostgreSQL, enrichissement asynchrone, recherche hybride
+├── tp-4/        # Mira v2 : PostgreSQL, enrichissement asynchrone, recherche hybride
+└── tp-5/        # Serveur MCP : expose mira à un agent IA (Claude Code, Claude Desktop...)
 ```
 
 ### `go-warmup/`
@@ -57,4 +58,18 @@ gitbash
 docker compose -f tp-4/docker-compose.yml up -d
 DATABASE_URL="postgres://mira:mira@localhost:5433/mira?sslmode=disable" go run ./tp-4/api/cmd/api
 go run ./tp-4/cli
+```
+
+### `tp-5/`
+
+Serveur [MCP](https://modelcontextprotocol.io/) (`modelcontextprotocol/go-sdk`, transport stdio) qui
+expose les notes de `tp-4/api` à un agent IA (Claude Code, Claude Desktop) : 4 tools —
+`search_notes`, `get_note`, `add_note`, `list_recent_notes`. Comme `tp-4/cli`, il ne parle qu'à
+l'API HTTP, jamais à la base directement, pour garantir que toute note créée par l'agent déclenche
+l'enrichissement automatique. Voir [tp-5/README.md](tp-5/README.md) pour l'installation et
+l'enregistrement dans Claude Code/Desktop, [tp-5/notes.md](tp-5/notes.md) et
+[tp-5/commands.md](tp-5/commands.md) pour le détail.
+
+```bash
+go run ./tp-5/cmd/mira-mcp
 ```
